@@ -9,6 +9,8 @@ public class TaskItem
     public short Priority { get; set; }
     public DateOnly? DueDate { get; set; }
     public int ProjectId { get; set; }
+    public int? CreatedById { get; set; }
+    public SystemAccount? CreatedBy { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }

@@ -10,6 +10,7 @@ public class TaskManagementDbContext(DbContextOptions<TaskManagementDbContext> o
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<TaskTag> TaskTags => Set<TaskTag>();
+    public DbSet<SystemAccount> Accounts => Set<SystemAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,9 +48,11 @@ public class TaskManagementDbContext(DbContextOptions<TaskManagementDbContext> o
             entity.Property(x => x.Title).HasColumnName("Title").HasMaxLength(300).IsRequired();
             entity.Property(x => x.Description).HasColumnName("Description");
             entity.Property(x => x.Status).HasColumnName("Status").HasDefaultValue((short)0);
-            entity.Property(x => x.Priority).HasColumnName("Priority").HasDefaultValue((short)1);
+            entity.Property(x => x.Priority).HasColumnName("Priority").HasDefaultValue((short)1).HasSentinel((short)-1);
             entity.Property(x => x.DueDate).HasColumnName("DueDate");
             entity.Property(x => x.ProjectId).HasColumnName("ProjectID");
+            entity.Property(x => x.CreatedById).HasColumnName("CreatedByID");
+            entity.HasOne(x => x.CreatedBy).WithMany(x => x.CreatedTasks).HasForeignKey(x => x.CreatedById).OnDelete(DeleteBehavior.Restrict);
             entity.Property(x => x.IsActive).HasColumnName("IsActive").HasDefaultValue(true);
             entity.Property(x => x.CreatedDate).HasColumnName("CreatedDate").HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(x => x.ModifiedDate).HasColumnName("ModifiedDate");
@@ -63,6 +66,17 @@ public class TaskManagementDbContext(DbContextOptions<TaskManagementDbContext> o
             entity.Property(x => x.TagId).HasColumnName("TagID");
             entity.Property(x => x.TagName).HasColumnName("TagName").HasMaxLength(50).IsRequired();
             entity.Property(x => x.Color).HasColumnName("Color").HasMaxLength(7);
+        });
+
+        modelBuilder.Entity<SystemAccount>(entity =>
+        {
+            entity.ToTable("SystemAccount");
+            entity.HasKey(x => x.AccountId);
+            entity.Property(x => x.AccountId).HasColumnName("AccountID");
+            entity.Property(x => x.FullName).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
+            entity.Property(x => x.PasswordHash).IsRequired();
+            entity.HasIndex(x => x.Email).IsUnique();
         });
 
         modelBuilder.Entity<TaskTag>(entity =>
