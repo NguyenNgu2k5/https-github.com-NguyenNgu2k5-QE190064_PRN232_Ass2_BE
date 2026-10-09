@@ -20,7 +20,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITagService, TagService>();
 
-var origins = (builder.Configuration["CORS_ORIGINS"] ?? "http://localhost:3000")
+var origins = (builder.Configuration["CORS_ORIGINS"] ?? "http://localhost:3012")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy => policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
 

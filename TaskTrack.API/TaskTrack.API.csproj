@@ -4,13 +4,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>5089bd9f-15d8-464d-bd98-93870ac5c6bd</UserSecretsId>
+    <UserSecretsId>TaskTrack-Ass2-QE190064</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TaskTrack.Repo\TaskTrack.Repo.csproj" />
     <ProjectReference Include="..\TaskTrack.Service\TaskTrack.Service.csproj" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.31" />
   </ItemGroup>
 
 </Project>
