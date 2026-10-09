@@ -46,6 +46,22 @@ public class AccountService(AccountRepository repo, IPasswordHasher<SystemAccoun
         await repo.SaveAsync(ct);
     }
 
+    public async Task SeedAdminAsync(string name, string email, string password, CancellationToken ct)
+    {
+        var request = new RegisterRequest { FullName = name, Email = email.Trim().ToLowerInvariant(), Password = password };
+        System.ComponentModel.DataAnnotations.Validator.ValidateObject(request, new System.ComponentModel.DataAnnotations.ValidationContext(request), true);
+        var existing = await repo.FindByEmailAsync(request.Email, ct);
+        if (existing is not null)
+        {
+            if (existing.Role != 1) throw new InvalidOperationException("An existing Staff account uses the seed email; it will not be elevated automatically.");
+            return;
+        }
+        var account = new SystemAccount { FullName = Name(name), Email = request.Email, Role = 1 };
+        account.PasswordHash = hasher.HashPassword(account, password);
+        await repo.AddAsync(account, ct);
+        await repo.SaveAsync(ct);
+    }
+
     private static string Name(string value) => value.Trim().Length > 0 ? value.Trim() : throw new InvalidOperationException("Full name is required.");
     private static AccountResponse Map(SystemAccount account) => new(account.AccountId, account.FullName, account.Email, account.Role, account.CreatedDate);
 }

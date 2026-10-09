@@ -61,6 +61,16 @@ var origins = (builder.Configuration["CORS_ORIGINS"] ?? "http://localhost:3012")
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy => policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
+if (args.Contains("--seed-admin"))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AccountService>().SeedAdminAsync(
+        builder.Configuration["ADMIN_FULL_NAME"] ?? "Administrator",
+        builder.Configuration["ADMIN_EMAIL"] ?? throw new InvalidOperationException("Configure ADMIN_EMAIL."),
+        builder.Configuration["ADMIN_PASSWORD"] ?? throw new InvalidOperationException("Configure ADMIN_PASSWORD."), CancellationToken.None);
+    Console.WriteLine("Admin seed completed. Credentials were not printed.");
+    return;
+}
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors("frontend");
