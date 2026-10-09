@@ -23,13 +23,14 @@ public class TaskService(TaskRepository repo, ProjectRepository projects) : ITas
         return (await query.OrderBy(x => x.DueDate).ToListAsync(ct)).Select(Map).ToList();
     }
 
-    public async Task<TaskResponse> CreateAsync(TaskRequest request, CancellationToken ct)
+    public async Task<TaskResponse> CreateAsync(TaskRequest request, int accountId, CancellationToken ct)
     {
         if (request.Title.Trim().Length == 0) throw new InvalidOperationException("Title is required.");
         if (!await projects.ExistsAsync(request.ProjectId, ct)) throw new InvalidOperationException("Project does not exist.");
         var tagIds = await ValidateTagIdsAsync(request.TagIds, ct);
-        var item = new TaskItem { Title = request.Title.Trim(), Description = request.Description?.Trim(), Status = request.Status, Priority = request.Priority, DueDate = request.DueDate, ProjectId = request.ProjectId, IsActive = true, CreatedDate = DateTime.UtcNow };
-        await repo.AddAsync(item, ct); await repo.SaveAsync(ct); await repo.ReplaceTagsAsync(item.TaskId, tagIds, ct); await repo.SaveAsync(ct); return await GetByIdAsync(item.TaskId, ct);
+        var item = new TaskItem { Title = request.Title.Trim(), Description = request.Description?.Trim(), Status = request.Status, Priority = request.Priority, DueDate = request.DueDate, ProjectId = request.ProjectId, CreatedById = accountId, IsActive = true, CreatedDate = DateTime.UtcNow };
+        repo.ReplaceTags(item, tagIds);
+        await repo.AddAsync(item, ct); await repo.SaveAsync(ct); return await GetByIdAsync(item.TaskId, ct);
     }
 
     public async Task<TaskResponse> UpdateAsync(int id, TaskRequest request, CancellationToken ct)
@@ -39,7 +40,8 @@ public class TaskService(TaskRepository repo, ProjectRepository projects) : ITas
         if (!await projects.ExistsAsync(request.ProjectId, ct)) throw new InvalidOperationException("Project does not exist.");
         var tagIds = await ValidateTagIdsAsync(request.TagIds, ct);
         item.Title = request.Title.Trim(); item.Description = request.Description?.Trim(); item.Status = request.Status; item.Priority = request.Priority; item.DueDate = request.DueDate; item.ProjectId = request.ProjectId; item.ModifiedDate = DateTime.UtcNow;
-        await repo.SaveAsync(ct); await repo.ReplaceTagsAsync(item.TaskId, tagIds, ct); await repo.SaveAsync(ct); return await GetByIdAsync(id, ct);
+        repo.ReplaceTags(item, tagIds);
+        await repo.SaveAsync(ct); return await GetByIdAsync(id, ct);
     }
 
     public async Task DeleteAsync(int id, CancellationToken ct)
