@@ -71,6 +71,21 @@ if (args.Contains("--seed-admin"))
     Console.WriteLine("Admin seed completed. Credentials were not printed.");
     return;
 }
+app.UseExceptionHandler(handler => handler.Run(async context =>
+{
+    var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+    var (status, message) = error switch
+    {
+        AccountConflictException ex => (409, ex.Message),
+        KeyNotFoundException ex => (404, ex.Message),
+        DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } } => (409, "A record with these values already exists."),
+        DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } } => (409, "This record is linked to other records, or the referenced record no longer exists."),
+        InvalidOperationException ex => (400, ex.Message),
+        _ => (500, "The request could not be completed. Please try again.")
+    };
+    context.Response.StatusCode = status;
+    await context.Response.WriteAsJsonAsync(new { message });
+}));
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors("frontend");
