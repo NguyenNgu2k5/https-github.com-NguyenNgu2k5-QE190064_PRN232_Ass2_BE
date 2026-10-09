@@ -25,7 +25,26 @@ public class AccountService(AccountRepository repo, IPasswordHasher<SystemAccoun
         return Map(account);
     }
 
+    public async Task<IReadOnlyList<AccountResponse>> GetAllAsync(CancellationToken ct) => (await repo.GetAllAsync(ct)).Select(Map).ToList();
     public async Task<AccountResponse> GetAsync(int id, CancellationToken ct) => Map(await repo.FindAsync(id, ct) ?? throw new KeyNotFoundException("Account not found."));
+
+    public async Task<AccountResponse> UpdateAsync(int id, AccountUpdateRequest request, CancellationToken ct)
+    {
+        var account = await repo.FindAsync(id, ct) ?? throw new KeyNotFoundException("Account not found.");
+        if (request.FullName is null && request.Role is null) throw new InvalidOperationException("Provide a full name or role.");
+        if (request.FullName is not null) account.FullName = Name(request.FullName);
+        if (request.Role is not null) account.Role = request.Role.Value;
+        await repo.SaveAsync(ct);
+        return Map(account);
+    }
+
+    public async Task DeleteAsync(int id, CancellationToken ct)
+    {
+        var account = await repo.FindAsync(id, ct) ?? throw new KeyNotFoundException("Account not found.");
+        if (await repo.HasTasksAsync(id, ct)) throw new AccountConflictException("This account created tasks and cannot be deleted, including tasks that were soft-deleted.");
+        repo.Remove(account);
+        await repo.SaveAsync(ct);
+    }
 
     private static string Name(string value) => value.Trim().Length > 0 ? value.Trim() : throw new InvalidOperationException("Full name is required.");
     private static AccountResponse Map(SystemAccount account) => new(account.AccountId, account.FullName, account.Email, account.Role, account.CreatedDate);
